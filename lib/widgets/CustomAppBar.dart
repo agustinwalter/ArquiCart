@@ -1,3 +1,4 @@
+import 'package:arquicart/widgets/LoginDialog.dart';
 import 'package:flutter/material.dart';
 
 class CustomAppBar extends StatefulWidget {
@@ -91,12 +92,20 @@ class _CustomAppBarState extends State<CustomAppBar> {
             // Account icon
             Padding(
               padding: const EdgeInsets.only(top: 2),
+              child: GestureDetector(
+                onTap: () {
+                showDialog(
+                  context: context,
+                  builder: (BuildContext context) => LoginDialog(),
+                );
+              },
               child: CircleAvatar(
-                radius: 22,
-                backgroundColor: Color(0xFF3c8bdc),
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
+                  radius: 22,
+                  backgroundColor: Color(0xFF3c8bdc),
+                  child: Icon(
+                    Icons.person,
+                    color: Colors.white,
+                  ),
                 ),
               ),
             )
