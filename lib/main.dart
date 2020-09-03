@@ -1,8 +1,19 @@
+import 'package:arquicart/provider/BuildingModel.dart';
+import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/screens/MapScreen.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider(create: (context) => BuildingModel()),
+        Provider(create: (context) => UserModel()),
+      ],
+      child: MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatelessWidget {
