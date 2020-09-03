@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:arquicart/screens/DetailsScreen.dart';
 import 'package:arquicart/widgets/CustomAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -31,13 +32,19 @@ class _MapScreenState extends State<MapScreen> {
 
       _markers.add(
         Marker(
-          markerId: MarkerId('newyork'),
-          position: LatLng(-37.6482898, -63.535327),
+          markerId: MarkerId('iglesia'),
+          position: LatLng(-32.790036, -60.726224),
           infoWindow: InfoWindow(
-            title: 'New York',
-            snippet: 'Welcome to New York',
+            title: 'Nuestra Señora Del Lujan',
+            snippet: 'Sarmiento 1241, Fray Luis Beltrán',
           ),
           icon: pinLocationIcon,
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => DetailsScreen()),
+            );
+          },
         ),
       );
     });

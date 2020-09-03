@@ -8,9 +8,9 @@ class CustomAppBar extends StatefulWidget {
 
 class _CustomAppBarState extends State<CustomAppBar> {
   List<String> _searchMatches = [
-    // 'Estudio de arquitectura Morgan',
-    // 'Estudio de arquitectura Morgan Estudio de arquitectura Morgan',
-    // 'Estudio de arquitectura Morgan',
+    // 'Iglesia Nuestra Señora Del Lujan',
+    // 'Iglesia de los Testigos de Jehova',
+    // 'Iglesia Adventista del Septimo Día',
   ];
 
   @override
@@ -94,12 +94,12 @@ class _CustomAppBarState extends State<CustomAppBar> {
               padding: const EdgeInsets.only(top: 2),
               child: GestureDetector(
                 onTap: () {
-                showDialog(
-                  context: context,
-                  builder: (BuildContext context) => LoginDialog(),
-                );
-              },
-              child: CircleAvatar(
+                  showDialog(
+                    context: context,
+                    builder: (BuildContext context) => LoginDialog(),
+                  );
+                },
+                child: CircleAvatar(
                   radius: 22,
                   backgroundColor: Color(0xFF3c8bdc),
                   child: Icon(
