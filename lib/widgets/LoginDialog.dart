@@ -1,5 +1,8 @@
+import 'package:arquicart/models/ArqUser.dart';
+import 'package:arquicart/provider/UserModel.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_auth_buttons/flutter_auth_buttons.dart';
+import 'package:provider/provider.dart';
 
 class LoginDialog extends StatefulWidget {
   @override
@@ -7,7 +10,6 @@ class LoginDialog extends StatefulWidget {
 }
 
 class _LoginDialogState extends State<LoginDialog> {
-  String _sessionStatus = 'NOT_LOGGED';
   String dropdownValue = 'Estudiante';
   final List<String> categories = [
     'Estudiante',
@@ -15,6 +17,22 @@ class _LoginDialogState extends State<LoginDialog> {
     'Aficionado',
     'Otro'
   ];
+
+  Future<void> _signInWithGoogle() async {
+    await Provider.of<UserModel>(context, listen: false).signInWithGoogle();
+    setState(() {});
+  }
+
+  Future<void> _closeSession() async {
+    await Provider.of<UserModel>(context, listen: false).closeSession();
+    setState(() {});
+  }
+
+  Future<void> _setCategory() async {
+    await Provider.of<UserModel>(context, listen: false)
+        .setCategory(dropdownValue);
+    setState(() {});
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,9 +63,13 @@ class _LoginDialogState extends State<LoginDialog> {
                 Radius.circular(20),
               ),
             ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: _content(),
+            child: Consumer<UserModel>(
+              builder: (context, userModel, child) {
+                return Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: _content(userModel.currentUser),
+                );
+              },
             ),
           ),
           // Person icon floating
@@ -73,142 +95,156 @@ class _LoginDialogState extends State<LoginDialog> {
     );
   }
 
-  List<Widget> _content() {
-    switch (_sessionStatus) {
-      case 'NOT_LOGGED':
-        return [
-          Text(
-            '¡Bienvenido!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-            ),
-          ),
-          SizedBox(height: 16),
-          GoogleSignInButton(
-            onPressed: () =>
-                setState(() => _sessionStatus = 'SELECT_USER_CATEGORY'),
-            text: 'Ingresa con Google  ',
-            borderRadius: 20,
-          )
-        ];
-      case 'SELECT_USER_CATEGORY':
-        return [
-          // Message
-          Text(
-            '¿Qué perfil se adapta mejor a ti?',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 20,
-            ),
-          ),
-          // Dropdown
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            child: DropdownButton<String>(
-              value: dropdownValue,
-              dropdownColor: Color(0xFF3c8bdc),
-              style: TextStyle(color: Colors.white, fontSize: 18),
-              icon: Icon(
-                Icons.arrow_drop_down,
-                color: Colors.white,
-              ),
-              underline: Container(
-                height: 2,
-                color: Colors.white,
-              ),
-              onChanged: (String newValue) =>
-                  setState(() => dropdownValue = newValue),
-              items: categories.map<DropdownMenuItem<String>>((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-            ),
-          ),
-          // Button
-          RaisedButton(
-            onPressed: () => setState(() => _sessionStatus = 'LOGGED'),
+  List<Widget> _content(ArqUser currentUser) {
+    if (currentUser == null) {
+      // User not logged
+      return [
+        Text(
+          '¡Bienvenido!',
+          textAlign: TextAlign.center,
+          style: TextStyle(
             color: Colors.white,
-            child: Text('GUARDAR'),
+            fontSize: 20,
           ),
-        ];
-      case 'LOGGED':
-        return [
-          // Name and photo
-          Stack(
-            alignment: Alignment.centerLeft,
-            children: [
-              Container(
-                padding: EdgeInsets.fromLTRB(46, 8, 12, 8),
-                margin: EdgeInsets.only(left: 60),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.all(
-                    Radius.circular(10),
-                  ),
-                ),
-                child: Text(
-                  'AGUSTÍN WALTER',
-                  style: TextStyle(
-                    color: Color(0xFF234aa2),
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
+        ),
+        SizedBox(height: 16),
+        GoogleSignInButton(
+          onPressed: _signInWithGoogle,
+          text: 'Ingresa con Google  ',
+          borderRadius: 20,
+        )
+      ];
+    }
+    if (currentUser.category == null) {
+      // User without category
+      return [
+        // Message
+        Text(
+          '¿Qué perfil se adapta mejor a ti?',
+          textAlign: TextAlign.center,
+          style: TextStyle(
+            color: Colors.white,
+            fontSize: 20,
+          ),
+        ),
+        // Dropdown
+        Padding(
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          child: DropdownButton<String>(
+            value: dropdownValue,
+            dropdownColor: Color(0xFF3c8bdc),
+            style: TextStyle(color: Colors.white, fontSize: 18),
+            icon: Icon(
+              Icons.arrow_drop_down,
+              color: Colors.white,
+            ),
+            underline: Container(
+              height: 2,
+              color: Colors.white,
+            ),
+            onChanged: (String newValue) =>
+                setState(() => dropdownValue = newValue),
+            items: categories.map<DropdownMenuItem<String>>((String value) {
+              return DropdownMenuItem<String>(
+                value: value,
+                child: Text(value),
+              );
+            }).toList(),
+          ),
+        ),
+        // Button
+        RaisedButton(
+          onPressed: _setCategory,
+          color: Colors.white,
+          child: Text('GUARDAR'),
+        ),
+        SizedBox(height: 20),
+        // Close session
+        FlatButton(
+          onPressed: _closeSession,
+          textColor: Colors.red[200],
+          child: Text(
+            'CERRAR SESIÓN',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      ];
+    } else {
+      // User logged
+      return [
+        // Name and photo
+        Stack(
+          alignment: Alignment.centerLeft,
+          children: [
+            Container(
+              padding: EdgeInsets.fromLTRB(46, 8, 12, 8),
+              margin: EdgeInsets.only(left: 60),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.all(
+                  Radius.circular(10),
                 ),
               ),
-              CircleAvatar(
-                radius: 46,
-                backgroundColor: Colors.white,
+              child: Text(
+                'AGUSTÍN WALTER',
+                style: TextStyle(
+                  color: Color(0xFF234aa2),
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            CircleAvatar(
+              radius: 46,
+              backgroundColor: Colors.white,
+              child: ClipRRect(
+                borderRadius: BorderRadius.all(Radius.circular(42)),
                 child: CircleAvatar(
                   radius: 42,
                   backgroundColor: Color(0xFF424242),
-                  child: Icon(
-                    Icons.person,
-                    color: Color(0xFFbdbdbd),
-                    size: 68,
-                  ),
+                  child: currentUser.photo == null
+                      ? Icon(
+                          Icons.person,
+                          color: Color(0xFFbdbdbd),
+                          size: 68,
+                        )
+                      : Image.network(currentUser.photo),
                 ),
               ),
-            ],
-          ),
-          // Category
-          Container(
-            width: double.maxFinite,
-            padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
-            margin: EdgeInsets.only(top: 24),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.all(
-                Radius.circular(10),
-              ),
             ),
-            child: Text(
-              dropdownValue.toUpperCase(),
-              style: TextStyle(
-                color: Color(0xFF234aa2),
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
+          ],
+        ),
+        // Category
+        Container(
+          width: double.maxFinite,
+          padding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+          margin: EdgeInsets.only(top: 24),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.all(
+              Radius.circular(10),
             ),
           ),
-          SizedBox(height: 24),
-          // Close session
-          FlatButton(
-            onPressed: () =>
-                setState(() => _sessionStatus = 'NOT_LOGGED'),
-            textColor: Colors.red[200],
-            child: Text(
-              'CERRAR SESIÓN',
-              style: TextStyle(fontSize: 16),
+          child: Text(
+            currentUser.category.toUpperCase(),
+            style: TextStyle(
+              color: Color(0xFF234aa2),
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
             ),
           ),
-        ];
-      default:
-        return null;
+        ),
+        SizedBox(height: 24),
+        // Close session
+        FlatButton(
+          onPressed: _closeSession,
+          textColor: Colors.red[200],
+          child: Text(
+            'CERRAR SESIÓN',
+            style: TextStyle(fontSize: 16),
+          ),
+        ),
+      ];
     }
   }
 }

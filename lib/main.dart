@@ -1,6 +1,7 @@
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/screens/MapScreen.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -39,10 +40,12 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   @override
   void initState() {
-    () async {
-      await Future.delayed(Duration.zero);
-      Provider.of<UserModel>(context, listen: false).getCurrentUser();
-    }();
+    Firebase.initializeApp().then(
+      (value) => Provider.of<UserModel>(
+        context,
+        listen: false,
+      ).getCurrentUser(),
+    );
     super.initState();
   }
 

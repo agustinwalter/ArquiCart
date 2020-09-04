@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "368527979681",
+    "firebase_url": "https://arquicart-1568227470001.firebaseio.com",
+    "project_id": "arquicart-1568227470001",
+    "storage_bucket": "arquicart-1568227470001.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:368527979681:android:6c2687135afbf4d7456ce0",
+        "android_client_info": {
+          "package_name": "com.arquicart.arquicart"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "368527979681-e8dlim2ttjq2245a81b0ilodmiofgs16.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arquicart.arquicart",
+            "certificate_hash": "43e88242af4054191a40580d40de5c9904e1cf1c"
+          }
+        },
+        {
+          "client_id": "368527979681-4q4m2m8fplq79mje5knlgmi4jnlolub4.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBs8zveq1mQSxEuBHSva0OziYgEvsV2d9I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "368527979681-4q4m2m8fplq79mje5knlgmi4jnlolub4.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

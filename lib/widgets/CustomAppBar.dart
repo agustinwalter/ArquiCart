@@ -1,5 +1,7 @@
+import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/widgets/LoginDialog.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 class CustomAppBar extends StatefulWidget {
   @override
@@ -90,25 +92,34 @@ class _CustomAppBarState extends State<CustomAppBar> {
               ),
             ),
             // Account icon
-            Padding(
-              padding: const EdgeInsets.only(top: 2),
-              child: GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) => LoginDialog(),
-                  );
-                },
-                child: CircleAvatar(
-                  radius: 22,
-                  backgroundColor: Color(0xFF3c8bdc),
-                  child: Icon(
-                    Icons.person,
-                    color: Colors.white,
+            Consumer<UserModel>(
+              builder: (context, userModel, child) {
+                return Padding(
+                  padding: const EdgeInsets.only(top: 2),
+                  child: GestureDetector(
+                    onTap: () {
+                      showDialog(
+                        context: context,
+                        builder: (BuildContext context) => LoginDialog(),
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.all(Radius.circular(22)),
+                      child: CircleAvatar(
+                        radius: 22,
+                        backgroundColor: Color(0xFF3c8bdc),
+                        child: userModel.currentUser == null
+                            ? Icon(
+                                Icons.person,
+                                color: Colors.white,
+                              )
+                            : Image.network(userModel.currentUser.photo),
+                      ),
+                    ),
                   ),
-                ),
-              ),
-            )
+                );
+              },
+            ),
           ],
         ),
       ),
