@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:arquicart/models/Building.dart';
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/screens/DetailsScreen.dart';
+import 'package:arquicart/screens/SetBuildingScreen.dart';
 import 'package:arquicart/widgets/CustomAppBar.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -49,12 +50,18 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   _goToCurrentLocation() async {
-    Position position =
-        await getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-    _mapController.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
-      target: LatLng(position.latitude, position.longitude),
-      zoom: 15,
-    )));
+    try {
+      Position position = await getLastKnownPosition();
+      if(position == null){
+        position = await getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+        );
+      }
+      _mapController.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(position.latitude, position.longitude),
+        zoom: 15,
+      )));
+    } catch (e) {}
     _get50Buildings('geohash');
   }
 
@@ -110,6 +117,21 @@ class _MapScreenState extends State<MapScreen> {
           CustomAppBar(),
         ],
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => SetBuildingScreen()),
+          );
+        },
+        backgroundColor: Color(0xFF3c8bdc),
+        tooltip: 'Agregar edificio',
+        child: Icon(
+          Icons.add_location,
+          size: 32,
+        ),
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
   }
 }

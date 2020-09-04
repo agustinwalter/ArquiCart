@@ -9,7 +9,7 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (context) => BuildingModel()),
-        Provider(create: (context) => UserModel()),
+        ChangeNotifierProvider(create: (context) => UserModel()),
       ],
       child: MyApp(),
     ),
@@ -37,6 +37,15 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
+  @override
+  void initState() {
+    () async {
+      await Future.delayed(Duration.zero);
+      Provider.of<UserModel>(context, listen: false).getCurrentUser();
+    }();
+    super.initState();
+  }
+
   @override
   Widget build(BuildContext context) {
     return MapScreen();

@@ -1,4 +1,5 @@
 import 'package:arquicart/models/Building.dart';
+import 'package:arquicart/widgets/Images.dart';
 import 'package:flutter/material.dart';
 
 class DetailsScreen extends StatelessWidget {
@@ -17,7 +18,9 @@ class DetailsScreen extends StatelessWidget {
         padding: EdgeInsets.only(bottom: 20),
         shrinkWrap: true,
         children: [
-          _images(),
+          building.images.length > 0
+              ? Images(height: 200, images: building.images)
+              : SizedBox.shrink(),
           building.name != null
               ? Padding(
                   padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
@@ -69,36 +72,6 @@ class DetailsScreen extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  Widget _images() {
-    if (building.images != null) {
-      return Column(
-        children: [
-          Container(
-            height: 200,
-            child: ListView.builder(
-              padding: EdgeInsets.all(8),
-              scrollDirection: Axis.horizontal,
-              shrinkWrap: true,
-              itemCount: building.images.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 3,
-                  child: Image.network(
-                    building.images[index],
-                    height: 220,
-                    fit: BoxFit.contain,
-                  ),
-                );
-              },
-            ),
-          ),
-          Divider(),
-        ],
-      );
-    }
-    return SizedBox.shrink();
   }
 
   Widget _data(String left, String right) {

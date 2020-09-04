@@ -36,5 +36,7 @@ class BuildingModel extends ChangeNotifier {
   }
 
   // Create or update a building
-  setBuilding(Building building) {}
+  Future<String> setBuilding(Building building) {
+    return null;
+  }
 }

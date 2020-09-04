@@ -3,9 +3,9 @@ class Building{
   final String name;
   final String architect;
   final String studio;
-  final int yearBegin;
-  final int yearEnd;
-  final int yearOpen;
+  final String yearBegin;
+  final String yearEnd;
+  final String yearOpen;
   final String direction;
   final String description;
   final double lat;
