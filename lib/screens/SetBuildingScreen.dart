@@ -85,6 +85,7 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
     _yearOpenFocus.dispose();
     _directionFocus.dispose();
     _descriptionFocus.dispose();
+    places.dispose();
     super.dispose();
   }
 
@@ -117,7 +118,7 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
   }
 
   Future<void> _addBuilding() async {
-    if (_directionCtrl.text.length > 0) {
+    if (_directionCtrl.text != '') {
       setState(() => publishing = true);
       String geohash = Geohash.encode(
         _searchSelected.geometry.location.lat,
@@ -142,11 +143,10 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
         publishedBy: userUid,
       ));
       // Upload images
-      Future.delayed(const Duration(milliseconds: 2000), () {
-        setState(() {
-          publishing = false;
-          published = true;
-        });
+      if (images.isNotEmpty) await BuildingModel().uploadImages(uid, images);
+      setState(() {
+        publishing = false;
+        published = true;
       });
     }
   }

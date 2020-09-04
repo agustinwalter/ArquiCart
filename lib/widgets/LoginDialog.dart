@@ -1,10 +1,13 @@
 import 'package:arquicart/models/ArqUser.dart';
 import 'package:arquicart/provider/UserModel.dart';
+import 'package:arquicart/screens/SetBuildingScreen.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_auth_buttons/flutter_auth_buttons.dart';
 import 'package:provider/provider.dart';
 
 class LoginDialog extends StatefulWidget {
+  final bool fromFab;
+  const LoginDialog({Key key, this.fromFab: false}) : super(key: key);
   @override
   _LoginDialogState createState() => _LoginDialogState();
 }
@@ -19,8 +22,23 @@ class _LoginDialogState extends State<LoginDialog> {
   ];
 
   Future<void> _signInWithGoogle() async {
-    await Provider.of<UserModel>(context, listen: false).signInWithGoogle();
-    setState(() {});
+    ArqUser user = await Provider.of<UserModel>(
+      context,
+      listen: false,
+    ).signInWithGoogle();
+    if (!widget.fromFab) {
+      setState(() {});
+    } else {
+      if (user.category == null) {
+        setState(() {});
+      } else {
+        Navigator.pop(context);
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => SetBuildingScreen()),
+        );
+      }
+    }
   }
 
   Future<void> _closeSession() async {
@@ -31,6 +49,15 @@ class _LoginDialogState extends State<LoginDialog> {
   Future<void> _setCategory() async {
     await Provider.of<UserModel>(context, listen: false)
         .setCategory(dropdownValue);
+    if (!widget.fromFab) {
+      setState(() {});
+    } else {
+      Navigator.pop(context);
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SetBuildingScreen()),
+      );
+    }
     setState(() {});
   }
 
@@ -96,11 +123,13 @@ class _LoginDialogState extends State<LoginDialog> {
   }
 
   List<Widget> _content(ArqUser currentUser) {
+    // User not logged
     if (currentUser == null) {
-      // User not logged
       return [
         Text(
-          '¡Bienvenido!',
+          !widget.fromFab
+              ? '¡Bienvenido!'
+              : 'Debes ingresar para poder agregar un edificio.',
           textAlign: TextAlign.center,
           style: TextStyle(
             color: Colors.white,
@@ -115,8 +144,8 @@ class _LoginDialogState extends State<LoginDialog> {
         )
       ];
     }
+    // User without category
     if (currentUser.category == null) {
-      // User without category
       return [
         // Message
         Text(

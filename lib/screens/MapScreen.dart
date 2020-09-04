@@ -1,13 +1,16 @@
 import 'dart:async';
 import 'package:arquicart/models/Building.dart';
 import 'package:arquicart/provider/BuildingModel.dart';
+import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/screens/DetailsScreen.dart';
 import 'package:arquicart/screens/SetBuildingScreen.dart';
 import 'package:arquicart/widgets/CustomAppBar.dart';
+import 'package:arquicart/widgets/LoginDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:provider/provider.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -52,7 +55,7 @@ class _MapScreenState extends State<MapScreen> {
   _goToCurrentLocation() async {
     try {
       Position position = await getLastKnownPosition();
-      if(position == null){
+      if (position == null) {
         position = await getCurrentPosition(
           desiredAccuracy: LocationAccuracy.high,
         );
@@ -98,6 +101,20 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {});
   }
 
+  _goToAddBuilding() {
+    if (Provider.of<UserModel>(context, listen: false).currentUser == null) {
+      showDialog(
+        context: context,
+        builder: (BuildContext context) => LoginDialog(fromFab: true,),
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (context) => SetBuildingScreen()),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -118,12 +135,7 @@ class _MapScreenState extends State<MapScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => SetBuildingScreen()),
-          );
-        },
+        onPressed: _goToAddBuilding,
         backgroundColor: Color(0xFF3c8bdc),
         tooltip: 'Agregar edificio',
         child: Icon(
