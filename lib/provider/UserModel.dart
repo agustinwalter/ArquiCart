@@ -14,25 +14,32 @@ class UserModel extends ChangeNotifier {
           await FirebaseFirestore.instance.doc('users/${fbUser.uid}').get();
       if (userSnap.exists) {
         Map<String, dynamic> userData = userSnap.data();
-        currentUser = ArqUser(
-          uid: fbUser.uid,
-          name: fbUser.displayName,
-          email: fbUser.email,
-          photo: fbUser.photoURL,
-          category: userData['category'],
-        );
-        notifyListeners();
-        return currentUser;
+        if (userData['category'] != null) {
+          currentUser = ArqUser(
+            uid: fbUser.uid,
+            name: fbUser.displayName,
+            email: fbUser.email,
+            photo: fbUser.photoURL,
+            category: userData['category'],
+          );
+          notifyListeners();
+          return currentUser;
+        }
       } else {
-        currentUser = ArqUser(
-          uid: fbUser.uid,
-          name: fbUser.displayName,
-          email: fbUser.email,
-          photo: fbUser.photoURL,
-        );
-        notifyListeners();
-        return currentUser;
+        print('object');
+        await FirebaseFirestore.instance.doc('users/${fbUser.uid}').set({
+          'email': fbUser.email,
+          'photo': fbUser.photoURL,
+        });
       }
+      currentUser = ArqUser(
+        uid: fbUser.uid,
+        name: fbUser.displayName,
+        email: fbUser.email,
+        photo: fbUser.photoURL,
+      );
+      notifyListeners();
+      return currentUser;
     }
     return null;
   }
@@ -57,9 +64,9 @@ class UserModel extends ChangeNotifier {
   }
 
   Future<void> setCategory(String category) async {
-    await FirebaseFirestore.instance.doc('users/${currentUser.uid}').set(
-      {'category': category.toString()},
-    );
+    await FirebaseFirestore.instance.doc('users/${currentUser.uid}').update({
+      'category': category.toString(),
+    });
     currentUser.category = category;
     notifyListeners();
     return;

@@ -1,35 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/cupertino.dart';
+
 class Building{
   final String uid;
   final String name;
-  final String architect;
-  final String studio;
-  final String yearBegin;
-  final String yearEnd;
-  final String yearOpen;
-  final String direction;
+  final String architects;
+  final String address;
   final String description;
-  final double lat;
-  final double lon;
+  final GeoPoint location;
   final bool approved;
-  final List<String> images;
+  final List<dynamic> images;
+  final List<dynamic> extraData;
   final String publishedBy;
-  final String geohash;
 
   const Building({
     this.uid,
-    this.name,
-    this.architect,
-    this.studio,
-    this.yearBegin,
-    this.yearEnd,
-    this.yearOpen,
-    this.direction,
-    this.description,
-    this.lat,
-    this.lon,
-    this.approved,
-    this.images,
-    this.publishedBy,
-    this.geohash,
+    this.extraData,
+    @required this.name,
+    @required this.architects,
+    @required this.address,
+    @required this.description,
+    @required this.location,
+    this.approved: false,
+    @required this.images,
+    @required this.publishedBy,
   });
 }

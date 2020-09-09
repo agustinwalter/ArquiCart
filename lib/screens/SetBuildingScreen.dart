@@ -45,12 +45,12 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
   void initState() {
     if (widget.building != null) {
       _nameCtrl.text = widget.building.name;
-      _architectCtrl.text = widget.building.architect;
-      _studioCtrl.text = widget.building.studio;
-      _yearBeginCtrl.text = widget.building.yearBegin.toString();
-      _yearEndCtrl.text = widget.building.yearEnd.toString();
-      _yearOpenCtrl.text = widget.building.yearOpen.toString();
-      _directionCtrl.text = widget.building.direction;
+      // _architectCtrl.text = widget.building.architect;
+      // _studioCtrl.text = widget.building.studio;
+      // _yearBeginCtrl.text = widget.building.yearBegin.toString();
+      // _yearEndCtrl.text = widget.building.yearEnd.toString();
+      // _yearOpenCtrl.text = widget.building.yearOpen.toString();
+      // _directionCtrl.text = widget.building.direction;
       _descriptionCtrl.text = widget.building.description;
     }
     _directionCtrl.addListener(() async {
@@ -130,16 +130,16 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
       ).currentUser.uid;
       String uid = await BuildingModel().setBuilding(Building(
         name: _nameCtrl.text,
-        architect: _architectCtrl.text,
-        studio: _studioCtrl.text,
-        yearBegin: _yearBeginCtrl.text,
-        yearEnd: _yearEndCtrl.text,
-        yearOpen: _yearOpenCtrl.text,
-        direction: _directionCtrl.text,
-        description: _descriptionCtrl.text,
-        lat: _searchSelected.geometry.location.lat,
-        lon: _searchSelected.geometry.location.lng,
-        geohash: geohash,
+        // architect: _architectCtrl.text,
+        // studio: _studioCtrl.text,
+        // yearBegin: _yearBeginCtrl.text,
+        // yearEnd: _yearEndCtrl.text,
+        // yearOpen: _yearOpenCtrl.text,
+        // direction: _directionCtrl.text,
+        // description: _descriptionCtrl.text,
+        // lat: _searchSelected.geometry.location.lat,
+        // lon: _searchSelected.geometry.location.lng,
+        // geohash: geohash,
         publishedBy: userUid,
       ));
       // Upload images

@@ -21,7 +21,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             // Logo
             GestureDetector(
@@ -33,7 +33,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
               },
               child: Image.asset(
                 'assets/img/logo.png',
-                height: 48,
+                height: 56,
               ),
             ),
             // Search Box
@@ -158,16 +158,17 @@ class _CustomAppBarState extends State<CustomAppBar> {
               textAlign: TextAlign.center,
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 18,
+                fontSize: 20,
+                fontFamily: 'Coolvetica'
               ),
             ),
           ),
           Positioned(
-            top: -46,
-            left: -24,
+            top: -50,
+            left: -30,
             child: Image.asset(
               'assets/img/logo.png',
-              height: 96,
+              height: 112,
             ),
           )
         ],

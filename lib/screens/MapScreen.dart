@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:ui';
 import 'package:arquicart/models/Building.dart';
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/provider/UserModel.dart';
@@ -25,16 +26,21 @@ class _MapScreenState extends State<MapScreen> {
   Completer<GoogleMapController> _mapCompleter = Completer();
   bool _myLocationEnabled = false;
   final Set<Marker> _markers = Set();
-  BitmapDescriptor pinLocationIcon;
   GoogleMapController _mapController;
+  bool _showInfoCard = false;
+  Building _currentBuilding;
 
   void _onMapCreated(GoogleMapController controller) {
+    _getLocationPermision();
     _mapCompleter.complete(controller);
     _mapController = controller;
-    _getLocationPermision();
+    _mapController.setMapStyle(
+      '[{"featureType":"poi","stylers":[{"visibility":"off"}]}]',
+    );
   }
 
   Future<void> _getLocationPermision() async {
+    // Si no pedi permiso, lo pido
     if (await Permission.location.isUndetermined ||
         await Permission.location.isDenied) {
       PermissionStatus _permissionStatus = await Permission.location.request();
@@ -42,13 +48,13 @@ class _MapScreenState extends State<MapScreen> {
       if (_permissionStatus.isGranted) {
         _goToCurrentLocation();
       } else {
-        _get50Buildings('geohash');
+        _getAllBuildings();
       }
     } else if (await Permission.location.isGranted) {
       setState(() => _myLocationEnabled = true);
       _goToCurrentLocation();
     } else {
-      _get50Buildings('geohash');
+      _getAllBuildings();
     }
   }
 
@@ -60,52 +66,48 @@ class _MapScreenState extends State<MapScreen> {
           desiredAccuracy: LocationAccuracy.high,
         );
       }
-      _mapController.moveCamera(CameraUpdate.newCameraPosition(CameraPosition(
+      _mapController
+          .animateCamera(CameraUpdate.newCameraPosition(CameraPosition(
         target: LatLng(position.latitude, position.longitude),
         zoom: 15,
       )));
     } catch (e) {}
-    _get50Buildings('geohash');
+    _getAllBuildings();
   }
 
-  _get50Buildings(String geohash) async {
-    List<Building> buildings = await BuildingModel().get50Buildings(geohash);
-
-    BitmapDescriptor pinLocationIcon = await BitmapDescriptor.fromAssetImage(
-      ImageConfiguration(devicePixelRatio: 2.5),
-      'assets/img/point.png',
-    );
+  _getAllBuildings() async {
+    List<Building> buildings = await BuildingModel().getAllBuildings();
     buildings.forEach((building) {
+      final double lat = building.location.latitude;
+      final double lon = building.location.longitude;
       _markers.add(
         Marker(
           markerId: MarkerId(building.uid),
-          position: LatLng(building.lat, building.lon),
-          infoWindow: InfoWindow(
-            title: building.name,
-            snippet: building.direction,
+          position: LatLng(lat, lon),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+            BitmapDescriptor.hueAzure,
           ),
-          icon: pinLocationIcon,
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => DetailsScreen(
-                  building: building,
-                ),
-              ),
-            );
-          },
+          onTap: () => _showPrevBuilding(building),
         ),
       );
     });
     setState(() {});
   }
 
+  _showPrevBuilding(Building building) {
+    setState(() {
+      _currentBuilding = building;
+      _showInfoCard = true;
+    });
+  }
+
   _goToAddBuilding() {
     if (Provider.of<UserModel>(context, listen: false).currentUser == null) {
       showDialog(
         context: context,
-        builder: (BuildContext context) => LoginDialog(fromFab: true,),
+        builder: (BuildContext context) => LoginDialog(
+          fromFab: true,
+        ),
       );
     } else {
       Navigator.push(
@@ -127,23 +129,100 @@ class _MapScreenState extends State<MapScreen> {
             myLocationEnabled: _myLocationEnabled,
             myLocationButtonEnabled: true,
             compassEnabled: true,
-            padding: EdgeInsets.only(top: 100),
+            padding: EdgeInsets.only(top: 100, bottom: _showInfoCard ? 120 : 0),
             markers: _markers,
+            onTap: (argument) => setState(() => _showInfoCard = false),
           ),
+          // Building prev dialog
+          _buildingPrevDialog(),
           // AppBar
           CustomAppBar(),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _goToAddBuilding,
-        backgroundColor: Color(0xFF3c8bdc),
-        tooltip: 'Agregar edificio',
-        child: Icon(
-          Icons.add_location,
-          size: 32,
-        ),
-      ),
+      floatingActionButton: !_showInfoCard
+          ? FloatingActionButton(
+              onPressed: _goToAddBuilding,
+              backgroundColor: Color(0xFF3c8bdc),
+              tooltip: 'Agregar edificio',
+              child: Icon(
+                Icons.add_location,
+                size: 32,
+              ),
+            )
+          : null,
       floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
     );
+  }
+
+  Widget _buildingPrevDialog() {
+    double width = MediaQuery.of(context).size.width;
+    if (_currentBuilding != null) {
+      return AnimatedPositioned(
+        duration: Duration(milliseconds: 200),
+        curve: Curves.ease,
+        bottom: _showInfoCard ? 20 : -130,
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => DetailsScreen(building: _currentBuilding),
+              ),
+            );
+          },
+          child: Container(
+            width: width,
+            child: Card(
+              margin: EdgeInsets.symmetric(horizontal: 16),
+              elevation: 6,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    child: Image.network(
+                      _currentBuilding.images[0],
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                    child: Container(
+                      width: width - 148,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            _currentBuilding.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 18),
+                          ),
+                          SizedBox(height: 4),
+                          Text(
+                            _currentBuilding.description,
+                            maxLines: 3,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
+    return SizedBox.shrink();
   }
 }

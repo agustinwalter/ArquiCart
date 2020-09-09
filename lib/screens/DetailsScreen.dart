@@ -18,47 +18,34 @@ class DetailsScreen extends StatelessWidget {
         padding: EdgeInsets.only(bottom: 20),
         shrinkWrap: true,
         children: [
-          building.images.length > 0
-              ? Images(height: 200, images: building.images)
-              : SizedBox.shrink(),
-          building.name != null
-              ? Padding(
-                  padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
-                  child: Text(
-                    building.name,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
-                  ),
-                )
-              : SizedBox.shrink(),
-          building.architect != null
-              ? _data('Arquitecto: ', building.architect)
-              : SizedBox.shrink(),
-          building.studio != null
-              ? _data('Estudio: ', building.studio)
-              : SizedBox.shrink(),
-          building.yearBegin != null
-              ? _data('Periodo de construcción: ',
-                  '${building.yearBegin} a ${building.yearEnd}')
-              : SizedBox.shrink(),
-          building.yearOpen != null
-              ? _data('Año de inauguración: ', '${building.yearOpen}')
-              : SizedBox.shrink(),
-          building.direction != null
-              ? _data('Dirección: ', building.direction)
-              : SizedBox.shrink(),
-          Divider(),
+          Images(height: 200, images: building.images),
+          // Name
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 12, 12, 6),
+            child: Text(
+              building.name,
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
+            ),
+          ),
           // Descripción
-          building.description != null
-              ? Padding(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  child: Text(
-                    building.description,
-                    style: TextStyle(fontSize: 16),
-                  ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+            child: Text(
+              building.description,
+              style: TextStyle(fontSize: 16),
+            ),
+          ),
+          _data('Dirección: ', building.address),
+          _data('Arquitecto/s: ', building.architects),
+          // Extra data
+          building.extraData != null
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: building.extraData
+                      .map((data) => _data('${data['key']}: ', data['value']))
+                      .toList(),
                 )
               : SizedBox.shrink(),
-          Divider(),
           SizedBox(height: 12),
           Center(
             child: RaisedButton.icon(
@@ -76,16 +63,16 @@ class DetailsScreen extends StatelessWidget {
 
   Widget _data(String left, String right) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: RichText(
         text: TextSpan(
           style: TextStyle(color: Colors.black, fontSize: 16),
           children: <TextSpan>[
-            TextSpan(text: left),
             TextSpan(
-              text: right,
+              text: left,
               style: TextStyle(fontWeight: FontWeight.bold),
             ),
+            TextSpan(text: right),
           ],
         ),
       ),

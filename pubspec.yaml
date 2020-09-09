@@ -34,3 +34,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/img/
+  fonts:
+    - family: Coolvetica
+      fonts:
+        - asset: assets/fonts/coolvetica.ttf
