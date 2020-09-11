@@ -7,6 +7,7 @@ import 'package:arquicart/screens/DetailsScreen.dart';
 import 'package:arquicart/screens/SetBuildingScreen.dart';
 import 'package:arquicart/widgets/CustomAppBar.dart';
 import 'package:arquicart/widgets/LoginDialog.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,6 +30,13 @@ class _MapScreenState extends State<MapScreen> {
   GoogleMapController _mapController;
   bool _showInfoCard = false;
   Building _currentBuilding;
+  List<Building> buildings;
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
 
   void _onMapCreated(GoogleMapController controller) {
     _getLocationPermision();
@@ -75,8 +83,22 @@ class _MapScreenState extends State<MapScreen> {
     _getAllBuildings();
   }
 
+  _goToLocation(double lat, double lon, String buildingId) async {
+    await _mapController.animateCamera(
+      CameraUpdate.newCameraPosition(CameraPosition(
+        target: LatLng(lat, lon),
+        zoom: 15,
+      )),
+    );
+    Future.delayed(const Duration(milliseconds: 200), () {
+      _showPrevBuilding(
+        buildings.firstWhere((building) => building.uid == buildingId),
+      );
+    });
+  }
+
   _getAllBuildings() async {
-    List<Building> buildings = await BuildingModel().getAllBuildings();
+    buildings = await BuildingModel().getAllBuildings();
     buildings.forEach((building) {
       final double lat = building.location.latitude;
       final double lon = building.location.longitude;
@@ -136,7 +158,10 @@ class _MapScreenState extends State<MapScreen> {
           // Building prev dialog
           _buildingPrevDialog(),
           // AppBar
-          CustomAppBar(),
+          CustomAppBar(
+            onResultTap: (lat, lon, buildingId) =>
+                _goToLocation(lat, lon, buildingId),
+          ),
         ],
       ),
       floatingActionButton: !_showInfoCard
@@ -186,8 +211,8 @@ class _MapScreenState extends State<MapScreen> {
                       topLeft: Radius.circular(12),
                       bottomLeft: Radius.circular(12),
                     ),
-                    child: Image.network(
-                      _currentBuilding.images[0],
+                    child: CachedNetworkImage(
+                      imageUrl: _currentBuilding.images[0],
                       width: 100,
                       height: 100,
                       fit: BoxFit.cover,

@@ -1,3 +1,4 @@
+import 'package:arquicart/provider/AlgoliaProvider.dart';
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/screens/MapScreen.dart';
@@ -11,6 +12,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (context) => BuildingModel()),
         ChangeNotifierProvider(create: (context) => UserModel()),
+        ChangeNotifierProvider(create: (context) => AlgoliaProvider()),
       ],
       child: MyApp(),
     ),
@@ -46,6 +48,7 @@ class _MyHomePageState extends State<MyHomePage> {
         listen: false,
       ).getCurrentUser(),
     );
+    Provider.of<AlgoliaProvider>(context, listen: false).init();
     super.initState();
   }
 

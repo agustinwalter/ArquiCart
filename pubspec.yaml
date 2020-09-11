@@ -17,14 +17,15 @@ dependencies:
   flutter_auth_buttons: ^0.9.0
   provider: ^4.3.2+1
   geolocator: ^6.0.0+2
-  image_picker: ^0.6.7+7
   google_maps_webservice: ^0.0.18
-  geohash: ^0.2.1
   firebase_auth: ^0.18.0+1
   cloud_firestore: ^0.14.0+2
   google_sign_in: ^4.5.3
   firebase_core: ^0.5.0
   firebase_storage: ^4.0.0
+  algolia: ^0.1.7
+  cached_network_image: ^2.3.2+1
+  multi_image_picker: ^4.7.13
   
 dev_dependencies:
   flutter_test:

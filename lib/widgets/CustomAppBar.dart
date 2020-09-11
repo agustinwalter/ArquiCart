@@ -1,19 +1,42 @@
+import 'package:algolia/algolia.dart';
+import 'package:arquicart/provider/AlgoliaProvider.dart';
 import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/widgets/LoginDialog.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CustomAppBar extends StatefulWidget {
+  final FunctionCallback onResultTap;
+  const CustomAppBar({@required this.onResultTap});
   @override
   _CustomAppBarState createState() => _CustomAppBarState();
 }
 
 class _CustomAppBarState extends State<CustomAppBar> {
-  List<String> _searchMatches = [
-    // 'Iglesia Nuestra Señora Del Lujan',
-    // 'Iglesia de los Testigos de Jehova',
-    // 'Iglesia Adventista del Septimo Día',
-  ];
+  List<AlgoliaObjectSnapshot> _searchMatches = [];
+  TextEditingController controller = TextEditingController();
+  FocusNode focusNode = FocusNode();
+
+  @override
+  void initState() {
+    controller.addListener(() {
+      if (controller.text.length > 2) {
+        Provider.of<AlgoliaProvider>(context, listen: false)
+            .search(controller.text)
+            .then((matches) => setState(() => _searchMatches = matches));
+      } else {
+        setState(() => _searchMatches = []);
+      }
+    });
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    controller.dispose();
+    focusNode.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,7 +44,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
       child: Padding(
         padding: const EdgeInsets.fromLTRB(12, 12, 12, 0),
         child: Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Logo
             GestureDetector(
@@ -43,7 +66,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
                   color: Color(0xbb3c8bdc),
                   borderRadius: BorderRadius.all(const Radius.circular(24)),
                 ),
-                margin: EdgeInsets.fromLTRB(12, 3, 12, 0),
+                margin: EdgeInsets.fromLTRB(12, 6, 12, 0),
                 padding: EdgeInsets.symmetric(horizontal: 12),
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -59,6 +82,8 @@ class _CustomAppBarState extends State<CustomAppBar> {
                         SizedBox(width: 6),
                         Expanded(
                           child: TextField(
+                            focusNode: focusNode,
+                            controller: controller,
                             style: TextStyle(color: Colors.white),
                             textCapitalization: TextCapitalization.sentences,
                             decoration: InputDecoration(
@@ -76,15 +101,19 @@ class _CustomAppBarState extends State<CustomAppBar> {
                         ),
                       ],
                     ),
+                    // Resluts
                     _searchMatches.length > 0
-                        ? Divider(
-                            height: 0,
-                            color: Colors.white,
+                        ? Padding(
+                            padding: const EdgeInsets.only(bottom: 8),
+                            child: Divider(
+                              height: 0,
+                              color: Colors.white,
+                            ),
                           )
                         : SizedBox.shrink(),
                     Column(
                       children: _searchMatches
-                          .map((text) => _searchResult(text))
+                          .map((result) => _searchResult(result))
                           .toList(),
                     ),
                   ],
@@ -95,7 +124,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
             Consumer<UserModel>(
               builder: (context, userModel, child) {
                 return Padding(
-                  padding: const EdgeInsets.only(top: 2),
+                  padding: const EdgeInsets.only(top: 4),
                   child: GestureDetector(
                     onTap: () {
                       showDialog(
@@ -157,10 +186,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
               'ArquiCart es una aplicación que consiste en una guía geoposicionada y colaborativa donde los usuarios y el administrador podrán cargar información sobre diferentes edificios que tengan valor arquitectónico o lugares que lo hayan tenido.',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontFamily: 'Coolvetica'
-              ),
+                  color: Colors.white, fontSize: 20, fontFamily: 'Coolvetica'),
             ),
           ),
           Positioned(
@@ -176,18 +202,48 @@ class _CustomAppBarState extends State<CustomAppBar> {
     );
   }
 
-  Widget _searchResult(String text) {
+  Widget _searchResult(AlgoliaObjectSnapshot result) {
     return Padding(
-      padding: const EdgeInsets.all(8.0),
-      child: Text(
-        text,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 16,
+      padding: const EdgeInsets.only(bottom: 8),
+      child: GestureDetector(
+        onTap: (){ 
+          widget.onResultTap(result.data['lat'], result.data['lon'], result.objectID); 
+          controller.text = '';
+          focusNode.unfocus();
+        },
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              result.data['name'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+            ),
+            Text(
+              result.data['address'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+            Text(
+              result.data['architects'],
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
+
+typedef FunctionCallback = void Function(double lat, double lon, String buildingId);

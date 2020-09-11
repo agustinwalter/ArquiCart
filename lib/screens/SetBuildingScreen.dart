@@ -1,12 +1,11 @@
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/provider/UserModel.dart';
-import 'package:geohash/geohash.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_webservice/places.dart';
-import 'dart:io';
 import 'package:arquicart/models/Building.dart';
 import 'package:arquicart/widgets/Images.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:provider/provider.dart';
 
 class SetBuildingScreen extends StatefulWidget {
@@ -19,44 +18,37 @@ class SetBuildingScreen extends StatefulWidget {
 class _SetBuildingScreenState extends State<SetBuildingScreen> {
   final TextEditingController _nameCtrl = TextEditingController();
   final TextEditingController _architectCtrl = TextEditingController();
-  final TextEditingController _studioCtrl = TextEditingController();
-  final TextEditingController _yearBeginCtrl = TextEditingController();
-  final TextEditingController _yearEndCtrl = TextEditingController();
-  final TextEditingController _yearOpenCtrl = TextEditingController();
-  final TextEditingController _directionCtrl = TextEditingController();
+  final TextEditingController _addressCtrl = TextEditingController();
   final TextEditingController _descriptionCtrl = TextEditingController();
+  final TextEditingController _keyCtrl = TextEditingController();
+  final TextEditingController _valueCtrl = TextEditingController();
   final FocusNode _architectFocus = FocusNode();
-  final FocusNode _studioFocus = FocusNode();
-  final FocusNode _yearBeginFocus = FocusNode();
-  final FocusNode _yearEndFocus = FocusNode();
-  final FocusNode _yearOpenFocus = FocusNode();
-  final FocusNode _directionFocus = FocusNode();
+  final FocusNode _addressFocus = FocusNode();
   final FocusNode _descriptionFocus = FocusNode();
-  List<File> images = [];
+  final FocusNode _valueFocus = FocusNode();
+  List<Asset> images = [];
   final places = GoogleMapsPlaces(
-    apiKey: "AIzaSyDVnH1nR6sEUHDS3Z5X6Rf32TRFWmB8ifg",
+    apiKey: "AIzaSyDZ3M0YxKFS3K3GbRgHcXUpUFYdfhvctEo",
   );
   List<PlacesSearchResult> _searchMatches = [];
   PlacesSearchResult _searchSelected;
   bool publishing = false;
   bool published = false;
+  List<Map<String, String>> _extraData = [];
+  final _formKey = GlobalKey<FormState>();
 
   @override
   void initState() {
     if (widget.building != null) {
       _nameCtrl.text = widget.building.name;
-      // _architectCtrl.text = widget.building.architect;
-      // _studioCtrl.text = widget.building.studio;
-      // _yearBeginCtrl.text = widget.building.yearBegin.toString();
-      // _yearEndCtrl.text = widget.building.yearEnd.toString();
-      // _yearOpenCtrl.text = widget.building.yearOpen.toString();
-      // _directionCtrl.text = widget.building.direction;
+      _architectCtrl.text = widget.building.architects;
+      _addressCtrl.text = widget.building.address;
       _descriptionCtrl.text = widget.building.description;
     }
-    _directionCtrl.addListener(() async {
-      if (_directionCtrl.text.length > 2) {
+    _addressCtrl.addListener(() async {
+      if (_addressCtrl.text.length > 2) {
         PlacesSearchResponse response = await places.searchByText(
-          _directionCtrl.text,
+          _addressCtrl.text,
         );
         if (response.isOkay) {
           setState(() => _searchMatches = response.results.take(5).toList());
@@ -72,83 +64,150 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
   void dispose() {
     _nameCtrl.dispose();
     _architectCtrl.dispose();
-    _studioCtrl.dispose();
-    _yearBeginCtrl.dispose();
-    _yearEndCtrl.dispose();
-    _yearOpenCtrl.dispose();
-    _directionCtrl.dispose();
+    _addressCtrl.dispose();
     _descriptionCtrl.dispose();
+    _keyCtrl.dispose();
+    _valueCtrl.dispose();
     _architectFocus.dispose();
-    _studioFocus.dispose();
-    _yearBeginFocus.dispose();
-    _yearEndFocus.dispose();
-    _yearOpenFocus.dispose();
-    _directionFocus.dispose();
+    _addressFocus.dispose();
     _descriptionFocus.dispose();
+    _valueFocus.dispose();
     places.dispose();
     super.dispose();
   }
 
-  void _addImages() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: Text('Subir imagen'),
-          content: Text('¿De dónde quieres subir la imagen?'),
+  Future<void> _getImages() async {
+    try {
+      List<Asset> resultList = await MultiImagePicker.pickImages(
+        maxImages: 50,
+        materialOptions: MaterialOptions(
+          actionBarColor: '#3c8bdc',
+          statusBarColor: '#2d68a4',
+        ),
+      );
+      setState(() => images.addAll(resultList));
+    } on Exception catch (e) {
+      print(e.toString());
+    }
+  }
+
+  _addBuilding() async {
+    if (!_formKey.currentState.validate()) {
+      return;
+    }
+    if (images.isEmpty) {
+      // Agrega una imágen
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Agrega una imagen'),
+          content: Text('Debes agregar al menos una imagen del edificio.'),
           actions: <Widget>[
             FlatButton(
-              child: Text('CÁMARA'),
-              onPressed: () => _getImage(ImageSource.camera),
-            ),
-            FlatButton(
-              child: Text('GALERÍA'),
-              onPressed: () => _getImage(ImageSource.gallery),
+              child: Text('ENTENDIDO'),
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
-        );
-      },
-    );
-  }
-
-  Future<void> _getImage(ImageSource source) async {
-    Navigator.of(context).pop();
-    final pickedFile = await ImagePicker().getImage(source: source);
-    setState(() => images.add(File(pickedFile.path)));
-  }
-
-  Future<void> _addBuilding() async {
-    if (_directionCtrl.text != '') {
-      setState(() => publishing = true);
-      String geohash = Geohash.encode(
-        _searchSelected.geometry.location.lat,
-        _searchSelected.geometry.location.lng,
+        ),
       );
-      String userUid = Provider.of<UserModel>(
-        context,
-        listen: false,
-      ).currentUser.uid;
-      String uid = await BuildingModel().setBuilding(Building(
-        name: _nameCtrl.text,
-        // architect: _architectCtrl.text,
-        // studio: _studioCtrl.text,
-        // yearBegin: _yearBeginCtrl.text,
-        // yearEnd: _yearEndCtrl.text,
-        // yearOpen: _yearOpenCtrl.text,
-        // direction: _directionCtrl.text,
-        // description: _descriptionCtrl.text,
-        // lat: _searchSelected.geometry.location.lat,
-        // lon: _searchSelected.geometry.location.lng,
-        // geohash: geohash,
-        publishedBy: userUid,
-      ));
-      // Upload images
-      if (images.isNotEmpty) await BuildingModel().uploadImages(uid, images);
-      setState(() {
-        publishing = false;
-        published = true;
-      });
+      return;
     }
+    if (_searchSelected == null) {
+      // Agregar una dirección válida
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('Agrega una dirección válida'),
+          content: Text('Debe seleccionar una dirección de la lista de sugerencias.'),
+          actions: <Widget>[
+            FlatButton(
+              child: Text('ENTENDIDO'),
+              onPressed: () => Navigator.of(context).pop(),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    setState(() => publishing = true);
+    final double lat = _searchSelected.geometry.location.lat;
+    final double lon = _searchSelected.geometry.location.lng;
+    GeoPoint location = GeoPoint(lat, lon);
+    String userUid = Provider.of<UserModel>(
+      context,
+      listen: false,
+    ).currentUser.uid;
+    String buildingUid = await Provider.of<BuildingModel>(
+      context,
+      listen: false,
+    ).setBuilding(Building(
+      name: _nameCtrl.text,
+      architects: _architectCtrl.text,
+      address: _addressCtrl.text,
+      description: _descriptionCtrl.text,
+      location: location,
+      images: images,
+      extraData: _extraData,
+      publishedBy: userUid,
+    ));
+    // Upload images
+    await BuildingModel().uploadImages(buildingUid, images);
+    setState(() {
+      publishing = false;
+      published = true;
+    });
+  }
+
+  _extraDataDialog() {
+    _keyCtrl.clear();
+    _valueCtrl.clear();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Agrega un nuevo dato"),
+        content: ListView(
+          shrinkWrap: true,
+          children: [
+            _textField(
+              'Nombre del dato',
+              _keyCtrl,
+              helperText: 'Ej.: "Año de innauguración"',
+              autofocus: true,
+              onEditingComplete: () => _valueFocus.requestFocus(),
+            ),
+            _textField(
+              'Valor',
+              _valueCtrl,
+              focusNode: _valueFocus,
+              textInputAction: TextInputAction.done,
+              helperText: 'Ej: "2008"',
+            ),
+          ],
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        actions: <Widget>[
+          FlatButton(
+            child: Text('CANCELAR'),
+            textColor: Colors.grey,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+          FlatButton(
+            child: Text('AGREGAR'),
+            onPressed: () {
+              if (_keyCtrl.text.length > 0 && _valueCtrl.text.length > 0) {
+                setState(() {
+                  _extraData.add(
+                    {'key': _keyCtrl.text, 'value': _valueCtrl.text},
+                  );
+                });
+              }
+              Navigator.of(context).pop();
+            },
+          )
+        ],
+      ),
+    );
   }
 
   @override
@@ -160,101 +219,116 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
             title: Text('Agrega un edificio'),
             backgroundColor: Color(0xFF3c8bdc),
           ),
-          body: ListView(
-            padding: EdgeInsets.all(16),
-            children: [
-              Text(
-                  'Completa los siguientes datos para agregar un edificio, solo la direción es obligatoria.'),
-              SizedBox(height: 12),
-              _textField(
-                'Nombre del edificio',
-                _nameCtrl,
-                autofocus: true,
-                onEditingComplete: () => _directionFocus.requestFocus(),
-              ),
-              _textField('Dirección', _directionCtrl,
-                  focusNode: _directionFocus,
+          body: Form(
+            key: _formKey,
+            child: ListView(
+              padding: EdgeInsets.all(16),
+              children: [
+                Text('Los campos con * son obligatorios'),
+                SizedBox(height: 12),
+                _textField(
+                  'Nombre del edificio *',
+                  _nameCtrl,
+                  requiredField: true,
+                  onEditingComplete: () => _addressFocus.requestFocus(),
+                ),
+                _textField(
+                  'Dirección *',
+                  _addressCtrl,
+                  focusNode: _addressFocus,
+                  requiredField: true,
                   onEditingComplete: () => _architectFocus.requestFocus(),
-                  paddingBottom: 0),
-              _searchMatches.length > 0 ? _suggestions() : SizedBox(height: 12),
-              _textField(
-                'Nombre del arquitecto',
-                _architectCtrl,
-                focusNode: _architectFocus,
-                onEditingComplete: () => _studioFocus.requestFocus(),
-              ),
-              _textField(
-                'Nombre del estudio',
-                _studioCtrl,
-                focusNode: _studioFocus,
-                onEditingComplete: () => _yearBeginFocus.requestFocus(),
-              ),
-              Row(
-                children: [
-                  Expanded(
-                    child: _textField(
-                      'Año de inicio de obra',
-                      _yearBeginCtrl,
-                      keyboardType: TextInputType.number,
-                      focusNode: _yearBeginFocus,
-                      onEditingComplete: () => _yearEndFocus.requestFocus(),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    child: _textField(
-                      'Año de fin de obra',
-                      _yearEndCtrl,
-                      keyboardType: TextInputType.number,
-                      focusNode: _yearEndFocus,
-                      onEditingComplete: () => _yearOpenFocus.requestFocus(),
-                    ),
-                  ),
-                ],
-              ),
-              _textField(
-                'Año de inauguración',
-                _yearOpenCtrl,
-                keyboardType: TextInputType.number,
-                focusNode: _yearOpenFocus,
-                onEditingComplete: () => _descriptionFocus.requestFocus(),
-              ),
-              _textField(
-                'Descripción',
-                _descriptionCtrl,
-                keyboardType: TextInputType.multiline,
-                textInputAction: TextInputAction.newline,
-                maxLines: 12,
-                focusNode: _descriptionFocus,
-              ),
-              Divider(),
-              images.length > 0
-                  ? Images(height: 200, images: images, fromNetwork: false)
-                  : SizedBox.shrink(),
-              images.length == 0
-                  ? Center(
-                      child: Icon(
-                        Icons.image,
-                        size: 60,
-                        color: Colors.grey[300],
+                  paddingBottom: 0,
+                ),
+                _searchMatches.length > 0
+                    ? _suggestions()
+                    : SizedBox(height: 12),
+                _textField(
+                  'Arquitecto/s *',
+                  _architectCtrl,
+                  requiredField: true,
+                  focusNode: _architectFocus,
+                  onEditingComplete: () => _descriptionFocus.requestFocus(),
+                ),
+                _textField(
+                  'Descripción *',
+                  _descriptionCtrl,
+                  keyboardType: TextInputType.multiline,
+                  textInputAction: TextInputAction.newline,
+                  maxLines: 12,
+                  requiredField: true,
+                  focusNode: _descriptionFocus,
+                ),
+                if (_extraData.isNotEmpty)
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Datos adicionales:',
+                        style: TextStyle(fontSize: 16),
                       ),
-                    )
-                  : SizedBox.shrink(),
-              OutlineButton(
-                onPressed: _addImages,
-                borderSide: BorderSide(width: 2, color: Color(0xFF3c8bdc)),
-                textColor: Color(0xFF3c8bdc),
-                child: Text('SUBIR IMÁGENES'),
-              ),
-              Divider(),
-              SizedBox(height: 8),
-              RaisedButton(
-                onPressed: _addBuilding,
-                color: Color(0xFF3c8bdc),
-                textColor: Colors.white,
-                child: Text('AGREGAR EDIFICIO'),
-              ),
-            ],
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: _extraData
+                            .map(
+                              (data) => _data(
+                                '${data['key']}: ',
+                                data['value'],
+                              ),
+                            )
+                            .toList(),
+                      ),
+                      SizedBox(height: 8),
+                    ],
+                  )
+                else
+                  SizedBox.shrink(),
+                OutlineButton(
+                  onPressed: _extraDataDialog,
+                  borderSide: BorderSide(width: 2, color: Color(0xFF3c8bdc)),
+                  textColor: Color(0xFF3c8bdc),
+                  child: Text('AGREGAR MÁS DATOS'),
+                ),
+                Divider(),
+                // Images
+                if (images.length > 0)
+                  Images(
+                    height: 200,
+                    images: images,
+                    fromNetwork: false,
+                    onRemoveImage: (index) => setState(
+                      () => images.removeAt(index),
+                    ),
+                  )
+                else
+                  SizedBox.shrink(),
+                if (images.length == 0)
+                  Center(
+                    child: Icon(
+                      Icons.image,
+                      size: 60,
+                      color: Colors.grey[300],
+                    ),
+                  )
+                else
+                  SizedBox.shrink(),
+                OutlineButton(
+                  onPressed: _getImages,
+                  borderSide: BorderSide(width: 2, color: Color(0xFF3c8bdc)),
+                  textColor: Color(0xFF3c8bdc),
+                  child: Text('SUBIR IMÁGENES'),
+                ),
+                Text('Debes subir al menos una imagen.'),
+                Divider(),
+                SizedBox(height: 8),
+                RaisedButton(
+                  onPressed: _addBuilding,
+                  color: Color(0xFF3c8bdc),
+                  textColor: Colors.white,
+                  child: Text('PUBLICAR EDIFICIO'),
+                ),
+              ],
+            ),
           ),
         ),
         _overlay(publishing, false),
@@ -271,13 +345,14 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              isDone
-                  ? Icon(
-                      Icons.done,
-                      size: 60,
-                      color: Colors.green,
-                    )
-                  : CircularProgressIndicator(),
+              if (isDone)
+                Icon(
+                  Icons.done,
+                  size: 60,
+                  color: Colors.green,
+                )
+              else
+                CircularProgressIndicator(),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 20, 20, 20),
                 child: Text(
@@ -288,14 +363,15 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
                   style: TextStyle(fontSize: 18),
                 ),
               ),
-              isDone
-                  ? RaisedButton(
-                      onPressed: () => Navigator.pop(context),
-                      color: Color(0xFF3c8bdc),
-                      textColor: Colors.white,
-                      child: Text('IR AL INICIO'),
-                    )
-                  : SizedBox.shrink(),
+              if (isDone)
+                RaisedButton(
+                  onPressed: () => Navigator.pop(context),
+                  color: Color(0xFF3c8bdc),
+                  textColor: Colors.white,
+                  child: Text('IR AL INICIO'),
+                )
+              else
+                SizedBox.shrink(),
             ],
           ),
         ),
@@ -314,6 +390,8 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
     void Function() onEditingComplete,
     double paddingBottom: 12,
     bool autofocus: false,
+    bool requiredField: false,
+    String helperText,
   }) {
     return Padding(
       padding: EdgeInsets.only(bottom: paddingBottom),
@@ -334,9 +412,22 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
           enabledBorder: OutlineInputBorder(
             borderSide: BorderSide(color: Colors.grey, width: 2),
           ),
+          errorBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderSide: BorderSide(color: Colors.red, width: 2),
+          ),
           isDense: true,
           labelText: label,
+          helperText: helperText,
         ),
+        validator: (value) {
+          if (value.isEmpty && requiredField) {
+            return 'Completa este campo';
+          }
+          return null;
+        },
       ),
     );
   }
@@ -348,7 +439,7 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
         children: _searchMatches.map((match) {
           return InkWell(
             onTap: () {
-              _directionCtrl.text = match.formattedAddress;
+              _addressCtrl.text = match.formattedAddress;
               _searchSelected = match;
             },
             child: Padding(
@@ -364,6 +455,36 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
           );
         }).toList(),
       ),
+    );
+  }
+
+  Widget _data(String left, String right) {
+    return Row(
+      children: [
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+            child: RichText(
+              text: TextSpan(
+                style: TextStyle(color: Colors.black, fontSize: 16),
+                children: <TextSpan>[
+                  TextSpan(
+                    text: left,
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  TextSpan(text: right),
+                ],
+              ),
+            ),
+          ),
+        ),
+        GestureDetector(
+          onTap: () => setState(
+            () => _extraData.removeWhere((data) => data['value'] == right),
+          ),
+          child: Icon(Icons.close),
+        )
+      ],
     );
   }
 }

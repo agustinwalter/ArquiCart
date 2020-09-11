@@ -47,15 +47,15 @@ class DetailsScreen extends StatelessWidget {
                 )
               : SizedBox.shrink(),
           SizedBox(height: 12),
-          Center(
-            child: RaisedButton.icon(
-              onPressed: () {},
-              color: Color(0xFF3c8bdc),
-              textColor: Colors.white,
-              icon: Icon(Icons.edit),
-              label: Text('EDITAR INFORMACIÓN'),
-            ),
-          ),
+          // Center(
+          //   child: RaisedButton.icon(
+          //     onPressed: () {},
+          //     color: Color(0xFF3c8bdc),
+          //     textColor: Colors.white,
+          //     icon: Icon(Icons.edit),
+          //     label: Text('EDITAR INFORMACIÓN'),
+          //   ),
+          // ),
         ],
       ),
     );
