@@ -1,4 +1,7 @@
 someData.txt
+key.jks
+private_key.pepk
+android/app/release
 
 # Miscellaneous
 *.class
