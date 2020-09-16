@@ -26,10 +26,17 @@ dependencies:
   algolia: ^0.1.7
   cached_network_image: ^2.3.2+1
   multi_image_picker: ^4.7.13
+  uuid: ^2.2.2
   
 dev_dependencies:
   flutter_test:
-    sdk: flutter
+    sdk: flutter 
+  flutter_launcher_icons: ^0.8.0
+
+flutter_icons:
+  image_path: "assets/img/icon.png"
+  ios: true
+  android: true
 
 flutter:
   uses-material-design: true

@@ -1,16 +1,18 @@
-import 'dart:io';
-
 import 'package:arquicart/models/Building.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
+import 'package:uuid/uuid.dart';
 
 class BuildingModel extends ChangeNotifier {
   List<Building> buildings = [];
   FirebaseFirestore db = FirebaseFirestore.instance;
-
+  final FirebaseStorage storage = FirebaseStorage(
+    storageBucket: 'gs://arquicart-1568227470001.appspot.com/',
+  );
+  
   // Get all buildings
   Future<List<Building>> getAllBuildings() async {
     QuerySnapshot querySnapshot = await db
@@ -50,14 +52,15 @@ class BuildingModel extends ChangeNotifier {
   }
 
   Future<void> uploadImages(String docId, List<Asset> images) async {
-    final FirebaseStorage storage = FirebaseStorage(
-      storageBucket: 'gs://arquicart-1568227470001.appspot.com/',
-    );
     for (int i = 0; i < images.length; i++) {
-      String path = 'buildings/$docId-$i.jpg';
+      List<String> a = images[i].name.split('.');
+      String ext = a[a.length - 1];
+      String name = Uuid().v4(); 
+      String path = 'buildings/$name.$ext';
       ByteData byteData = await images[i].getByteData();
       List<int> imageData = byteData.buffer.asUint8List();
-      StorageUploadTask uploadTask = storage.ref().child(path).putData(imageData);
+      StorageUploadTask uploadTask =
+          storage.ref().child(path).putData(imageData);
       StorageTaskSnapshot snap = await uploadTask.onComplete;
       String url = await snap.ref.getDownloadURL();
       await db.doc('buildings/$docId').update({
