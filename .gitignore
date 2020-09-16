@@ -1,3 +1,9 @@
+someData.txt
+key.jks
+key.jks.old
+private_key.pepk
+android/app/release
+
 # Miscellaneous
 *.class
 *.log
