@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "368527979681-se0allkerobc2tf1ss0384ndm3bimfnj.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.arquicart.arquicart",
+            "certificate_hash": "2b0e8007ae8465cf7caadae3c11c7f550664da30"
+          }
+        },
+        {
           "client_id": "368527979681-e8dlim2ttjq2245a81b0ilodmiofgs16.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
