@@ -3,7 +3,11 @@ import 'package:arquicart/provider/AlgoliaProvider.dart';
 import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/widgets/LoginDialog.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_open_whatsapp/flutter_open_whatsapp.dart';
+import 'package:mailto/mailto.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter_vector_icons/flutter_vector_icons.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class CustomAppBar extends StatefulWidget {
   final FunctionCallback onResultTap;
@@ -167,7 +171,7 @@ class _CustomAppBarState extends State<CustomAppBar> {
           Container(
             padding: EdgeInsets.symmetric(
               horizontal: 22,
-              vertical: 86,
+              vertical: 70,
             ),
             decoration: BoxDecoration(
               gradient: const LinearGradient(
@@ -182,11 +186,79 @@ class _CustomAppBarState extends State<CustomAppBar> {
                 Radius.circular(20),
               ),
             ),
-            child: Text(
-              'ArquiCart es una aplicación que consiste en una guía geoposicionada y colaborativa donde los usuarios y el administrador podrán cargar información sobre diferentes edificios que tengan valor arquitectónico o lugares que lo hayan tenido.',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                  color: Colors.white, fontSize: 20, fontFamily: 'Coolvetica'),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  'ArquiCart es una aplicación que consiste en una guía geoposicionada y colaborativa donde los usuarios y el administrador podrán cargar información sobre diferentes edificios que tengan valor arquitectónico o lugares que lo hayan tenido.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontFamily: 'Coolvetica',
+                  ),
+                ),
+                SizedBox(height: 24),
+                Text(
+                  'Contacto:',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontFamily: 'Coolvetica',
+                  ),
+                ),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    IconButton(
+                      icon: Icon(Icons.mail),
+                      color: Colors.white,
+                      onPressed: () async {
+                        final mailtoLink = Mailto(to: ['arquicart@gmail.com']);
+                        await launch('$mailtoLink');
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(FontAwesome5Brands.whatsapp),
+                      color: Colors.white,
+                      onPressed: () async {
+                        const url = 'https://wa.me/message/5S6VPL7ITULKO1';
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(FontAwesome5Brands.facebook),
+                      color: Colors.white,
+                      onPressed: () async {
+                        const url =
+                            'https://www.facebook.com/ArquiCart-117378636773594';
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+                      },
+                    ),
+                    IconButton(
+                      icon: Icon(FontAwesome.instagram),
+                      color: Colors.white,
+                      onPressed: () async {
+                        const url = 'https://www.instagram.com/arquicart/';
+                        if (await canLaunch(url)) {
+                          await launch(url);
+                        } else {
+                          throw 'Could not launch $url';
+                        }
+                      },
+                    ),
+                  ],
+                )
+              ],
             ),
           ),
           Positioned(
@@ -206,8 +278,9 @@ class _CustomAppBarState extends State<CustomAppBar> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
       child: GestureDetector(
-        onTap: (){ 
-          widget.onResultTap(result.data['lat'], result.data['lon'], result.objectID); 
+        onTap: () {
+          widget.onResultTap(
+              result.data['lat'], result.data['lon'], result.objectID);
           controller.text = '';
           focusNode.unfocus();
         },
@@ -219,7 +292,9 @@ class _CustomAppBarState extends State<CustomAppBar> {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                  color: Colors.white, fontSize: 16, fontWeight: FontWeight.bold),
+                  color: Colors.white,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold),
             ),
             Text(
               result.data['address'],
@@ -246,4 +321,5 @@ class _CustomAppBarState extends State<CustomAppBar> {
   }
 }
 
-typedef FunctionCallback = void Function(double lat, double lon, String buildingId);
+typedef FunctionCallback = void Function(
+    double lat, double lon, String buildingId);
