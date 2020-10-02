@@ -1,3 +1,4 @@
+import 'package:arquicart/screens/ImageView.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
@@ -37,10 +38,20 @@ class Images extends StatelessWidget {
               Card(
                 elevation: 3,
                 child: fromNetwork
-                    ? CachedNetworkImage(
-                        imageUrl: images[index],
-                        height: height - 24,
-                        fit: BoxFit.contain,
+                    ? GestureDetector(
+                        child: CachedNetworkImage(
+                          imageUrl: images[index],
+                          height: height - 24,
+                          fit: BoxFit.contain,
+                        ),
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ImageView(images, index),
+                            ),
+                          );
+                        },
                       )
                     : AssetThumb(
                         asset: images[index],

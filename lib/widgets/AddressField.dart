@@ -1,18 +1,19 @@
 import 'package:arquicart/widgets/CustomTextField.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_webservice/places.dart';
+import 'package:google_place/google_place.dart';
 
 class AddressField extends StatefulWidget {
   final TextEditingController addressCtrl;
   final FocusNode addressFocus;
-  final Function(PlacesSearchResult) onSelected;
-  final places = GoogleMapsPlaces(
-    apiKey: "AIzaSyDZ3M0YxKFS3K3GbRgHcXUpUFYdfhvctEo",
-  );
+  final Function(AutocompletePrediction) onSelected;
+  final String sessionToken;
+  final GooglePlace googlePlace;
   AddressField({
     @required this.addressCtrl,
     @required this.addressFocus,
     @required this.onSelected,
+    @required this.sessionToken, 
+    @required this.googlePlace,
   });
   @override
   _AddressFieldState createState() => _AddressFieldState();
@@ -20,8 +21,8 @@ class AddressField extends StatefulWidget {
 
 class _AddressFieldState extends State<AddressField> {
   bool _showField = true;
-  List<PlacesSearchResult> _searchMatches = [];
-  PlacesSearchResult _selectedAddress;
+  List<AutocompletePrediction> _searchMatches = [];
+  AutocompletePrediction _selectedAddress;
 
   @override
   void initState() {
@@ -32,10 +33,14 @@ class _AddressFieldState extends State<AddressField> {
         if (text.contains(i.toString())) search = true;
       }
       if (search && mounted) {
-        PlacesSearchResponse response = await widget.places.searchByText(text);
+        AutocompleteResponse response = await widget.googlePlace.autocomplete.get(
+          text,
+          sessionToken: widget.sessionToken,
+          language: 'es',
+        );
         setState(() {
-          if (response.results.length > 0 && mounted && _showField) {
-            _searchMatches = response.results.take(4).toList();
+          if (response.predictions.length > 0 && mounted && _showField) {
+            _searchMatches = response.predictions.take(4).toList();
           } else
             _searchMatches = [];
         });
@@ -45,7 +50,7 @@ class _AddressFieldState extends State<AddressField> {
     super.initState();
   }
 
-  _onSelected(PlacesSearchResult match) {
+  _onSelected(AutocompletePrediction match) {
     widget.onSelected(match);
     setState(() {
       _selectedAddress = match;
@@ -57,7 +62,7 @@ class _AddressFieldState extends State<AddressField> {
   _onEdit() {
     widget.onSelected(null);
     setState(() {
-      widget.addressCtrl.text = _selectedAddress.formattedAddress;
+      widget.addressCtrl.text = _selectedAddress.description;
       _selectedAddress = null;
       _searchMatches = [];
       _showField = true;
@@ -103,7 +108,7 @@ class _AddressFieldState extends State<AddressField> {
                 Row(
                   children: [
                     Icon(Icons.location_on),
-                    Expanded(child: Text(match.formattedAddress)),
+                    Expanded(child: Text(match.description)),
                   ],
                 ),
                 Divider()
@@ -129,7 +134,7 @@ class _AddressFieldState extends State<AddressField> {
               color: Color(0xFF3c8bdc),
             ),
             SizedBox(width: 4),
-            Expanded(child: Text(_selectedAddress.formattedAddress)),
+            Expanded(child: Text(_selectedAddress.description)),
             SizedBox(width: 4),
             GestureDetector(
               onTap: _onEdit,

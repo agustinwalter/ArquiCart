@@ -6,13 +6,17 @@ import 'package:arquicart/widgets/CustomTextField.dart';
 import 'package:arquicart/widgets/ExtraData.dart';
 import 'package:arquicart/widgets/ExtraDataDialog.dart';
 import 'package:arquicart/widgets/LoadingOverlay.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:arquicart/models/Building.dart';
 import 'package:arquicart/widgets/Images.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:google_maps_webservice/places.dart';
+import 'package:google_place/google_place.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:provider/provider.dart';
+import 'package:uuid/uuid.dart';
+
+GooglePlace googlePlace =
+    GooglePlace("AIzaSyDZ3M0YxKFS3K3GbRgHcXUpUFYdfhvctEo");
 
 class SetBuildingScreen extends StatefulWidget {
   @override
@@ -35,7 +39,14 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
   bool publishing = false;
   bool published = false;
   List<Map<String, String>> _extraData = [];
-  PlacesSearchResult _placeSelected;
+  AutocompletePrediction _placeSelected;
+  String sessionToken;
+
+  @override
+  void initState() {
+    super.initState();
+    _generateNewSessionToken();
+  }
 
   @override
   void dispose() {
@@ -51,6 +62,8 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
     _valueFocus.dispose();
     super.dispose();
   }
+
+  _generateNewSessionToken() => sessionToken = Uuid().v4();
 
   Future<void> _getImages() async {
     try {
@@ -86,13 +99,14 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
       );
       return;
     }
-    if (_placeSelected == null){
+    if (_placeSelected == null) {
       // Agrega una dirección
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
           title: Text('Agrega una dirección válida'),
-          content: Text('Debes seleccionar una dirección de la lista de sugerencias.'),
+          content: Text(
+              'Debes seleccionar una dirección de la lista de sugerencias.'),
           actions: <Widget>[
             FlatButton(
               child: Text('ENTENDIDO'),
@@ -103,10 +117,18 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
       );
       return;
     }
-
     setState(() => publishing = true);
-    final double lat = _placeSelected.geometry.location.lat;
-    final double lon = _placeSelected.geometry.location.lng;
+
+    // Get location of the address an generate a new token
+    DetailsResponse details = await googlePlace.details.get(
+      _placeSelected.placeId,
+      fields: "geometry",
+      sessionToken: sessionToken,
+    );
+    _generateNewSessionToken();
+    
+    final double lat = details.result.geometry.location.lat;
+    final double lon = details.result.geometry.location.lng;
     GeoPoint location = GeoPoint(lat, lon);
     String userUid = Provider.of<UserModel>(
       context,
@@ -118,7 +140,7 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
     ).setBuilding(Building(
       name: _nameCtrl.text,
       architects: _architectCtrl.text,
-      address: _placeSelected.formattedAddress,
+      address: _placeSelected.description,
       description: _descriptionCtrl.text,
       location: location,
       images: images,
@@ -182,6 +204,8 @@ class _SetBuildingScreenState extends State<SetBuildingScreen> {
                     _placeSelected = place;
                     _architectFocus.requestFocus();
                   },
+                  sessionToken: sessionToken,
+                  googlePlace: googlePlace,
                 ),
                 SizedBox(height: 12),
                 CustomTextField(
