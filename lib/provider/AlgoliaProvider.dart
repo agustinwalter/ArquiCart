@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 
 class AlgoliaProvider extends ChangeNotifier {
   Algolia algolia;
+  final index = bool.fromEnvironment('dart.vm.product') ? 'buildings' : 'buildings-dev';
 
   init() {
     algolia = Algolia.init(
@@ -13,7 +14,7 @@ class AlgoliaProvider extends ChangeNotifier {
 
   Future<List<AlgoliaObjectSnapshot>> search(String param) async {
     AlgoliaQuerySnapshot snap = await algolia.instance
-        .index('buildings')
+        .index(index)
         .search(param)
         .setPage(0)
         .setHitsPerPage(3)

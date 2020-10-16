@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:geocoder/geocoder.dart';
 import 'package:multi_image_picker/multi_image_picker.dart';
 import 'package:uuid/uuid.dart';
 
@@ -12,11 +13,13 @@ class BuildingModel extends ChangeNotifier {
   final FirebaseStorage storage = FirebaseStorage(
     storageBucket: 'gs://arquicart-1568227470001.appspot.com/',
   );
-  
+  final buildingsColl =
+      bool.fromEnvironment('dart.vm.product') ? 'buildings' : 'buildings-dev';
+
   // Get all buildings
   Future<List<Building>> getAllBuildings() async {
     QuerySnapshot querySnapshot = await db
-        .collection('buildings')
+        .collection(buildingsColl)
         .where('approved', isEqualTo: true)
         .get();
     for (var doc in querySnapshot.docs) {
@@ -38,7 +41,7 @@ class BuildingModel extends ChangeNotifier {
 
   // Create or update a building
   Future<String> setBuilding(Building building) async {
-    DocumentReference docRef = await db.collection('buildings').add({
+    DocumentReference docRef = await db.collection(buildingsColl).add({
       'name': building.name,
       'architects': building.architects,
       'address': building.address,
@@ -55,18 +58,29 @@ class BuildingModel extends ChangeNotifier {
     for (int i = 0; i < images.length; i++) {
       List<String> a = images[i].name.split('.');
       String ext = a[a.length - 1];
-      String name = Uuid().v4(); 
-      String path = 'buildings/$name.$ext';
+      String name = Uuid().v4();
+      String path = '$buildingsColl/$name.$ext';
       ByteData byteData = await images[i].getByteData();
       List<int> imageData = byteData.buffer.asUint8List();
       StorageUploadTask uploadTask =
           storage.ref().child(path).putData(imageData);
       StorageTaskSnapshot snap = await uploadTask.onComplete;
       String url = await snap.ref.getDownloadURL();
-      await db.doc('buildings/$docId').update({
+      await db.doc('$buildingsColl/$docId').update({
         'images': FieldValue.arrayUnion([url]),
       });
     }
     return null;
+  }
+
+  Future<String> getAndSetAddress(String buildingId, GeoPoint location) async {
+    String address = '';
+    final coordinates = Coordinates(location.latitude, location.longitude);
+    List<Address> addresses = await Geocoder.local.findAddressesFromCoordinates(coordinates);
+    address = addresses.first.addressLine;
+    await db.doc('$buildingsColl/$buildingId').update({
+      'address': address,
+    });
+    return address;
   }
 }

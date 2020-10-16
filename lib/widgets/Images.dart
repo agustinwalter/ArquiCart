@@ -39,8 +39,13 @@ class Images extends StatelessWidget {
                 elevation: 3,
                 child: fromNetwork
                     ? GestureDetector(
-                        child: CachedNetworkImage(
-                          imageUrl: images[index],
+                        // child: CachedNetworkImage(
+                        //   imageUrl: images[index],
+                        //   height: height - 24,
+                        //   fit: BoxFit.contain,
+                        // ),
+                        child: Image.network(
+                          images[index],
                           height: height - 24,
                           fit: BoxFit.contain,
                         ),
