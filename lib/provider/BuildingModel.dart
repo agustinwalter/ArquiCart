@@ -16,29 +16,6 @@ class BuildingModel extends ChangeNotifier {
   final buildingsColl =
       bool.fromEnvironment('dart.vm.product') ? 'buildings' : 'buildings-dev';
 
-  // Get all buildings
-  Future<List<Building>> getAllBuildings() async {
-    QuerySnapshot querySnapshot = await db
-        .collection(buildingsColl)
-        .where('approved', isEqualTo: true)
-        .get();
-    for (var doc in querySnapshot.docs) {
-      buildings.add(Building(
-        uid: doc.id,
-        name: doc.data()['name'],
-        description: doc.data()['description'],
-        address: doc.data()['address'],
-        location: doc.data()['location'],
-        architects: doc.data()['architects'],
-        extraData: doc.data()['extraData'],
-        images: doc.data()['images'],
-        publishedBy: doc.data()['publishedBy'],
-      ));
-    }
-    notifyListeners();
-    return buildings;
-  }
-
   // Create or update a building
   Future<String> setBuilding(Building building) async {
     DocumentReference docRef = await db.collection(buildingsColl).add({
@@ -52,6 +29,22 @@ class BuildingModel extends ChangeNotifier {
       'extraData': building.extraData,
     });
     return docRef.id;
+  }
+
+  Future<Building> getBuilding(String buildingId) async {
+    DocumentSnapshot snap =
+        await db.collection(buildingsColl).doc(buildingId).get();
+    return Building(
+      uid: snap.id,
+      name: snap.data()['name'],
+      architects: snap.data()['architects'],
+      address: snap.data()['address'],
+      description: snap.data()['description'],
+      extraData: snap.data()['extraData'],
+      location: snap.data()['location'],
+      images: snap.data()['images'],
+      publishedBy: snap.data()['publishedBy'],
+    );
   }
 
   Future<void> uploadImages(String docId, List<Asset> images) async {
@@ -76,7 +69,8 @@ class BuildingModel extends ChangeNotifier {
   Future<String> getAndSetAddress(String buildingId, GeoPoint location) async {
     String address = '';
     final coordinates = Coordinates(location.latitude, location.longitude);
-    List<Address> addresses = await Geocoder.local.findAddressesFromCoordinates(coordinates);
+    List<Address> addresses =
+        await Geocoder.local.findAddressesFromCoordinates(coordinates);
     address = addresses.first.addressLine;
     await db.doc('$buildingsColl/$buildingId').update({
       'address': address,
