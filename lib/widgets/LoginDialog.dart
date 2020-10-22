@@ -215,7 +215,7 @@ class _LoginDialogState extends State<LoginDialog> {
                 ),
               ),
               child: Text(
-                'AGUSTÍN WALTER',
+                currentUser.name.toUpperCase(),
                 style: TextStyle(
                   color: Color(0xFF234aa2),
                   fontSize: 18,

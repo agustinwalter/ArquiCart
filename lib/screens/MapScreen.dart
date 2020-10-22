@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:ui';
+import 'package:algolia/algolia.dart';
 import 'package:arquicart/models/Building.dart';
+import 'package:arquicart/provider/AlgoliaProvider.dart';
 import 'package:arquicart/provider/BuildingModel.dart';
 import 'package:arquicart/provider/UserModel.dart';
 import 'package:arquicart/screens/DetailsScreen.dart';
@@ -13,6 +15,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:provider/provider.dart';
+import '../globals.dart';
 
 class MapScreen extends StatefulWidget {
   @override
@@ -28,8 +31,9 @@ class _MapScreenState extends State<MapScreen> {
   bool _myLocationEnabled = false;
   final Set<Marker> _markers = Set();
   GoogleMapController _mapController;
-  bool _showInfoCard = false;
-  Building _currentBuilding;
+  bool _showInfoCard = false, _loadingBuilding = false;
+  LoadButtonStatus loadButtonStatus = LoadButtonStatus.hidden;
+  Map<String, dynamic> _currentBuilding;
   List<Building> buildings;
 
   @override
@@ -53,16 +57,10 @@ class _MapScreenState extends State<MapScreen> {
         await Permission.location.isDenied) {
       PermissionStatus _permissionStatus = await Permission.location.request();
       setState(() => _myLocationEnabled = _permissionStatus.isGranted);
-      if (_permissionStatus.isGranted) {
-        _goToCurrentLocation();
-      } else {
-        _getAllBuildings();
-      }
+      if (_permissionStatus.isGranted) _goToCurrentLocation();
     } else if (await Permission.location.isGranted) {
       setState(() => _myLocationEnabled = true);
       _goToCurrentLocation();
-    } else {
-      _getAllBuildings();
     }
   }
 
@@ -80,45 +78,68 @@ class _MapScreenState extends State<MapScreen> {
         zoom: 15,
       )));
     } catch (e) {}
-    _getAllBuildings();
   }
 
-  _goToLocation(double lat, double lon, String buildingId) async {
+  _goToLocation(AlgoliaObjectSnapshot result) async {
+    double lat = result.data['_geoloc']['lat'];
+    double lng = result.data['_geoloc']['lng'];
     await _mapController.animateCamera(
       CameraUpdate.newCameraPosition(CameraPosition(
-        target: LatLng(lat, lon),
+        target: LatLng(lat, lng),
         zoom: 15,
       )),
     );
+    _markers.add(
+      Marker(
+        markerId: MarkerId(result.objectID),
+        position: LatLng(lat, lng),
+        icon: BitmapDescriptor.defaultMarkerWithHue(
+          BitmapDescriptor.hueAzure,
+        ),
+        onTap: () => _showPrevBuilding({
+          'objectID': result.objectID,
+          ...result.data,
+        }),
+      ),
+    );
     Future.delayed(const Duration(milliseconds: 200), () {
-      _showPrevBuilding(
-        buildings.firstWhere((building) => building.uid == buildingId),
-      );
+      _showPrevBuilding({
+        'objectID': result.objectID,
+        ...result.data,
+      });
     });
   }
 
-  _getAllBuildings() async {
-    buildings = await BuildingModel().getAllBuildings();
-    buildings.forEach((building) {
-      final double lat = building.location.latitude;
-      final double lon = building.location.longitude;
+  _getBuildingsInArea() async {
+    setState(() => loadButtonStatus = LoadButtonStatus.loading);
+
+    LatLngBounds visibleRegion = await _mapController.getVisibleRegion();
+    List<Map<String, dynamic>> snaps = await Provider.of<AlgoliaProvider>(
+      context,
+      listen: false,
+    ).buildingsInArea(visibleRegion);
+
+    snaps.forEach((snap) {
+      final double lat = snap['_geoloc']['lat'];
+      final double lng = snap['_geoloc']['lng'];
       _markers.add(
         Marker(
-          markerId: MarkerId(building.uid),
-          position: LatLng(lat, lon),
+          markerId: MarkerId(snap['objectID']),
+          position: LatLng(lat, lng),
           icon: BitmapDescriptor.defaultMarkerWithHue(
             BitmapDescriptor.hueAzure,
           ),
-          onTap: () => _showPrevBuilding(building),
+          onTap: () => _showPrevBuilding(snap),
         ),
       );
     });
-    setState(() {});
+
+    setState(() => loadButtonStatus = LoadButtonStatus.hidden);
   }
 
-  _showPrevBuilding(Building building) {
+  _showPrevBuilding(prevData) {
     setState(() {
-      _currentBuilding = building;
+      _currentBuilding = prevData;
       _showInfoCard = true;
     });
   }
@@ -154,13 +175,17 @@ class _MapScreenState extends State<MapScreen> {
             padding: EdgeInsets.only(top: 100, bottom: _showInfoCard ? 120 : 0),
             markers: _markers,
             onTap: (argument) => setState(() => _showInfoCard = false),
+            onCameraMoveStarted: () => setState(
+              () => loadButtonStatus = LoadButtonStatus.visible,
+            ),
           ),
           // Building prev dialog
           _buildingPrevDialog(),
           // AppBar
           CustomAppBar(
-            onResultTap: (lat, lon, buildingId) =>
-                _goToLocation(lat, lon, buildingId),
+            onResultTap: (result) => _goToLocation(result),
+            onLoadButtonTap: _getBuildingsInArea,
+            loadButtonStatus: loadButtonStatus,
           ),
         ],
       ),
@@ -187,11 +212,16 @@ class _MapScreenState extends State<MapScreen> {
         curve: Curves.ease,
         bottom: _showInfoCard ? 20 : -130,
         child: GestureDetector(
-          onTap: () {
+          onTap: () async {
+            setState(() => _loadingBuilding = true);
+            Building building = await BuildingModel().getBuilding(
+              _currentBuilding['objectID'],
+            );
+            setState(() => _loadingBuilding = false);
             Navigator.push(
               context,
               MaterialPageRoute(
-                builder: (context) => DetailsScreen(building: _currentBuilding),
+                builder: (context) => DetailsScreen(building: building),
               ),
             );
           },
@@ -203,44 +233,62 @@ class _MapScreenState extends State<MapScreen> {
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
+              child: Stack(
                 children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      bottomLeft: Radius.circular(12),
-                    ),
-                    child: CachedNetworkImage(
-                      imageUrl: _currentBuilding.images[0],
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                    child: Container(
-                      width: width - 148,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            _currentBuilding.name,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: TextStyle(fontSize: 18),
-                          ),
-                          SizedBox(height: 4),
-                          Text(
-                            _currentBuilding.description,
-                            maxLines: 3,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ],
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.only(
+                          topLeft: Radius.circular(12),
+                          bottomLeft: Radius.circular(12),
+                        ),
+                        child: CachedNetworkImage(
+                          imageUrl: _currentBuilding['image'],
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                        ),
                       ),
-                    ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 8),
+                        child: Container(
+                          width: width - 148,
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                _currentBuilding['name'],
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(fontSize: 18),
+                              ),
+                              SizedBox(height: 4),
+                              Text(
+                                _currentBuilding['description'],
+                                maxLines: 3,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
+                  if (_loadingBuilding)
+                    Positioned(
+                      right: 8,
+                      top: 0,
+                      child: Container(
+                        width: width - 140,
+                        height: 3,
+                        child: LinearProgressIndicator(
+                          backgroundColor: Colors.white,
+                        ),
+                      ),
+                    )
+                  else
+                    SizedBox.shrink()
                 ],
               ),
             ),

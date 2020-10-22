@@ -6,7 +6,7 @@ publish_to: 'none'
 version: 1.0.0+1
 
 environment:
-  sdk: ">=2.7.0 <3.0.0"
+  sdk: '>=2.7.0 <3.0.0'
 
 dependencies:
   flutter:
@@ -17,7 +17,6 @@ dependencies:
   flutter_auth_buttons: ^0.9.0
   provider: ^4.3.2+1
   geolocator: ^6.0.0+2
-  google_maps_webservice: ^0.0.18
   firebase_auth: ^0.18.0+1
   cloud_firestore: ^0.14.0+2
   google_sign_in: ^4.5.3
@@ -27,14 +26,21 @@ dependencies:
   cached_network_image: ^2.3.2+1
   multi_image_picker: ^4.7.13
   uuid: ^2.2.2
-  
+  flutter_vector_icons: ^0.2.1
+  flutter_open_whatsapp: ^0.1.2
+  url_launcher: ^5.6.0
+  mailto: ^1.0.0
+  google_place: ^0.3.3
+  photo_view: ^0.10.2
+  geocoder: ^0.2.1
+
 dev_dependencies:
   flutter_test:
-    sdk: flutter 
+    sdk: flutter
   flutter_launcher_icons: ^0.8.0
 
 flutter_icons:
-  image_path: "assets/img/icon.png"
+  image_path: 'assets/img/icon.png'
   ios: true
   android: true
 

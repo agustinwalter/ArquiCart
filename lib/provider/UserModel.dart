@@ -6,12 +6,13 @@ import 'package:google_sign_in/google_sign_in.dart';
 
 class UserModel extends ChangeNotifier {
   ArqUser currentUser;
+  final usersColl = bool.fromEnvironment('dart.vm.product') ? 'users' : 'users-dev';
 
   Future<ArqUser> getCurrentUser() async {
     User fbUser = FirebaseAuth.instance.currentUser;
     if (fbUser != null) {
       DocumentSnapshot userSnap =
-          await FirebaseFirestore.instance.doc('users/${fbUser.uid}').get();
+          await FirebaseFirestore.instance.doc('$usersColl/${fbUser.uid}').get();
       if (userSnap.exists) {
         Map<String, dynamic> userData = userSnap.data();
         if (userData['category'] != null) {
@@ -27,7 +28,7 @@ class UserModel extends ChangeNotifier {
         }
       } else {
         print('object');
-        await FirebaseFirestore.instance.doc('users/${fbUser.uid}').set({
+        await FirebaseFirestore.instance.doc('$usersColl/${fbUser.uid}').set({
           'email': fbUser.email,
           'photo': fbUser.photoURL,
         });
@@ -64,7 +65,7 @@ class UserModel extends ChangeNotifier {
   }
 
   Future<void> setCategory(String category) async {
-    await FirebaseFirestore.instance.doc('users/${currentUser.uid}').update({
+    await FirebaseFirestore.instance.doc('$usersColl/${currentUser.uid}').update({
       'category': category.toString(),
     });
     currentUser.category = category;

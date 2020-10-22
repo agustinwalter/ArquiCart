@@ -19,7 +19,7 @@ class ExtraDataDialog extends StatelessWidget {
           CustomTextField(
             label: 'Nombre del dato',
             controller: keyCtrl,
-            helperText: 'Ej.: "Año de innauguración"',
+            helperText: 'Ej.: "Año de inauguración"',
             autofocus: true,
             onEditingComplete: () => valueFocus.requestFocus(),
           ),
